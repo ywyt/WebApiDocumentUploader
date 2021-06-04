@@ -37,3 +37,6 @@ msbuild.wrn
 .vs/
 *.cache
 */obj/
+WebApiDocumentUploader/obj/project.assets.json
+WebApiDocumentUploader/obj/WebApiDocumentUploader.csproj.nuget.dgspec.json
+WebApiDocumentUploader/obj/WebApiDocumentUploader.csproj.nuget.g.props
