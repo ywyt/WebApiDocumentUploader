@@ -1,0 +1,82 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" crossorigin="anonymous">
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+    <style>
+        .login-form {
+            width: 340px;
+            margin: 50px auto;
+        }
+
+            .login-form form {
+                margin-bottom: 15px;
+                background: #f7f7f7;
+                box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+                padding: 30px;
+            }
+
+            .login-form h2 {
+                margin: 0 0 15px;
+            }
+
+        .form-control, .btn {
+            min-height: 38px;
+            border-radius: 2px;
+        }
+
+        .btn {
+            font-size: 15px;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+
+        function Login() {
+            var data = { "UserName": $("#username").val(), "Password": $("#password").val() }
+            $.ajax({
+                url: 'api/Authentication/RequestToken',
+                data: JSON.stringify(data),
+                type: "post",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (obj) {
+                    var JWS_REGEX = /^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
+                    if (JWS_REGEX.test(obj)) {
+                        window.localStorage.setItem('uploadToken', obj);
+                        window.location.href = "./upload.html";
+                    } else {
+                        alert(obj);
+                    }
+                }
+            });
+        }
+
+    </script>
+</head>
+<body>
+    <div class="login-form">
+        <h2 class="text-center">Log in</h2>
+        <div class="form-group">
+            <input id="username" type="text" class="form-control" placeholder="请输入账号" required />
+        </div>
+        <div class="form-group">
+            <input id="password" type="password" class="form-control" placeholder="请输入密码" required />
+        </div>
+        <div class="form-group">
+            <button type="button" class="btn btn-primary btn-block" onclick="Login()">登录</button>
+        </div>
+        <div class="clearfix">
+            <label class="pull-left checkbox-inline"><input type="checkbox"> Remember me</label>
+            <a href="#" class="pull-right">Forgot Password?</a>
+        </div>
+
+        <p class="text-center"><a href="#">Create an Account</a></p>
+    </div>
+</body>
+</html>

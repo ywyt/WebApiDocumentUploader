@@ -1,0 +1,146 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" crossorigin="anonymous">
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <style>
+        #progress-wrp {
+            border: 1px solid #0099CC;
+            padding: 1px;
+            position: relative;
+            height: 30px;
+            border-radius: 3px;
+            margin: 10px;
+            text-align: left;
+            background: #fff;
+            box-shadow: inset 1px 3px 6px rgba(0, 0, 0, 0.12);
+        }
+
+            #progress-wrp .progress-bar {
+                height: 100%;
+                border-radius: 3px;
+                background-color: #f39ac7;
+                width: 0;
+                box-shadow: inset 1px 1px 10px rgba(0, 0, 0, 0.11);
+            }
+
+            #progress-wrp .status {
+                top: 3px;
+                left: 50%;
+                position: absolute;
+                display: inline-block;
+                color: #000000;
+            }
+    </style>
+    <script>
+        var Upload = function (file) {
+            this.file = file;
+        };
+
+        Upload.prototype.getType = function () {
+            return this.file.type;
+        };
+        Upload.prototype.getSize = function () {
+            return this.file.size;
+        };
+        Upload.prototype.getName = function () {
+            return this.file.name;
+        };
+
+        Upload.prototype.doUpload = function Upload() {
+            var that = this;
+            //var formData = new FormData(document.querySelector('#frmUpload'));
+            var formData = new FormData();
+
+            // add assoc key values, this will be posts values
+            formData.append("file", this.file, this.getName());
+            formData.append("upload_file", true);
+
+            var token = window.localStorage.getItem('uploadToken');
+            var headerParams = { 'Authorization': ('bearer ' + token) };
+
+            $.ajax({
+                type: "POST",
+                url: "api/UploadStream/uploadzip",
+                headers: headerParams,
+                xhr: function () {
+                    var myXhr = $.ajaxSettings.xhr();
+                    if (myXhr.upload) {
+                        myXhr.upload.addEventListener('progress', that.progressHandling, false);
+                    }
+                    return myXhr;
+                },
+                success: function (data) {
+                    console.log(data);
+                    if (data && data.model && data.model.imagePaths) {
+                        $("#results").html("");
+                        $.each(data.model.imagePaths, function (index, value) {
+                            $("#results").append(`<div class="col-lg-1">` + (index+1) + `</div><div class="col-lg-5"><a href="` + value + `" target="_blank">`+ value + `</a><div>`);
+                        });
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+                async: true,
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                timeout: 72000000
+            });
+        }
+
+        Upload.prototype.progressHandling = function (event) {
+            $("#historylink").hide();
+            var percent = 0;
+            var position = event.loaded || event.position;
+            var total = event.total;
+            var progress_bar_id = "#progress-wrp";
+            if (event.lengthComputable) {
+                percent = Math.ceil(position / total * 100);
+            }
+            // update progressbars classes so it fits your code
+            $(progress_bar_id + " .progress-bar").css("width", +percent + "%");
+            $(progress_bar_id + " .status").text(percent + "%");
+            if (percent == 100) {
+                $("#results").html(`<h1>等待解压缩文件</h1>`);
+                $("#historylink").show();
+            }
+        };
+
+        //Change id to your id
+        function startUpload() {
+            var file = $("#uploadzip")[0].files[0];
+
+            var upload = new Upload(file);
+
+            // maby check size or type here with upload.getSize() and upload.getType()
+
+            // execute upload
+            upload.doUpload();
+        }
+
+    </script>
+</head>
+<body>
+    <a id="historylink" href="history.html">查看历史</a>
+    <div class="container">
+        <form id="frmUpload">
+            <label class="form-label" for="uploadzip">请选择zip压缩文件上传</label>
+            <input type="file" class="form-control" id="uploadzip" placeholder="选择zip文件" onchange="startUpload()" />
+        </form>
+    </div>
+    <div id="progress-wrp">
+        <div class="progress-bar"></div>
+        <div class="status">0%</div>
+    </div>
+    <div id="results">
+
+    </div>
+</body>
+</html>

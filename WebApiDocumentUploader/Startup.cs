@@ -16,6 +16,13 @@ using Microsoft.OpenApi.Models;
 using AutoMapper;
 using Microsoft.AspNetCore.Http.Features;
 using WebApiDocumentUploader.DependencyInjection;
+using WebApiDocumentUploader.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using WebApiDocumentUploader.DB;
+using WebApiDocumentUploader.DBService;
 
 namespace WebApiDocumentUploader
 {
@@ -52,6 +59,7 @@ namespace WebApiDocumentUploader
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 options.IncludeXmlComments(xmlPath);
             });
+
             //Force to use Newtonsoft
             services.AddSwaggerGenNewtonsoftSupport();
 
@@ -76,8 +84,36 @@ namespace WebApiDocumentUploader
                     .AllowAnyMethod()
                     .AllowAnyHeader();
             }));
+
+            string mysqlCon = Configuration.GetConnectionString("MySqlContext");
+            services.AddDbContext<MyContext>(options => options.UseMySql(connectionString: mysqlCon, ServerVersion.Parse("5.7")));
+
             //Add Cors 
-            
+            services.Configure<TokenManagement>(Configuration.GetSection("tokenManagement"));
+            var token = Configuration.GetSection("tokenManagement").Get<TokenManagement>();
+
+            services.AddAuthentication(x =>
+            {
+                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(x =>
+            {
+                x.RequireHttpsMetadata = false;
+                x.SaveToken = true;
+                x.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(token.Secret)),
+                    ValidIssuer = token.Issuer,
+                    ValidAudience = token.Audience,
+                    ValidateIssuer = false,
+                    ValidateAudience = false
+                };
+            });
+
+            services.AddScoped<IAuthenticateService, TokenAuthenticationService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUploadService, UploadService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -99,7 +135,7 @@ namespace WebApiDocumentUploader
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseRouting();
 
             app.UseAuthorization();
@@ -108,6 +144,8 @@ namespace WebApiDocumentUploader
             
             //CORS FOR DEBUG ONLY
             app.UseCors("AnyOrigin");
+
+            app.UseStaticFiles();
         }
     }
 }
