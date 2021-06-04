@@ -29,7 +29,8 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+WebApiDocumentUploader/[Bb]in/
+WebApiDocumentUploader/[Oo]bj/
 
 # Visual Studio 2015
 .vs/
-*\obj\
