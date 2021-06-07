@@ -1,4 +1,4 @@
-<html>
+﻿<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -79,12 +79,14 @@
                     if (data && data.model && data.model.imagePaths) {
                         $("#results").html("");
                         $.each(data.model.imagePaths, function (index, value) {
-                            $("#results").append(`<div class="col-lg-1">` + (index+1) + `</div><div class="col-lg-5"><a href="` + value + `" target="_blank">`+ value + `</a><div>`);
+                            $("#results").append(`<div class="col-lg-1 col-md-1">` + (index + 1) + `</div><div class="col-lg-11 col-md-11"><a href="` + value + `" target="_blank">`+ value + `</a><div>`);
                         });
                     }
                 },
                 error: function (error) {
                     console.log(error);
+                    if (error.status == 401)
+                        window.location.href = "./login.html";
                 },
                 async: true,
                 data: formData,

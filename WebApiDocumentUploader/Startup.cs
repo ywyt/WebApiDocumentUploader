@@ -140,7 +140,15 @@ namespace WebApiDocumentUploader
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints => 
+            {
+                endpoints.Map("/", context =>
+                {
+                    context.Response.Redirect("/index.html");
+                    return Task.CompletedTask;
+                }); 
+                endpoints.MapControllers(); 
+            });
             
             //CORS FOR DEBUG ONLY
             app.UseCors("AnyOrigin");

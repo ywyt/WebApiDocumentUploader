@@ -17,5 +17,11 @@ namespace WebApiDocumentUploader.DBService
         /// <param name="userName"></param>
         /// <returns></returns>
         UploadRecordResultDto GetLastUploadHistory(string userName);
+        /// <summary>
+        /// 上传记录
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns></returns>
+        List<UploadRecordResultDto> GetUploadHistory(string userName);
     }
 }

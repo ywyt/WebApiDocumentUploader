@@ -27,7 +27,9 @@ namespace WebApiDocumentUploader.DB
         public string WebPath 
         { 
             get 
-            { 
+            {
+                if (BaseUri == null)
+                    return Path;
                 Uri myUri = new Uri(BaseUri, Path);  
                 return myUri.ToString(); 
             } 

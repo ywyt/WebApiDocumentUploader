@@ -1,4 +1,4 @@
-<html>
+﻿<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -15,24 +15,26 @@
             var token = window.localStorage.getItem('uploadToken');
             var headerParams = { 'Authorization': ('bearer ' + token) };
             $.ajax({
-                url: 'api/UploadStream/lasthistory',
+                url: 'api/UploadStream/history',
                 type: "post",
                 headers: headerParams,
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function (data) {
-                    console.log(data);
-                    if (data && data.details) {
+                    //console.log(data);
+                    if (data && data.length) {
                         $("#results").html("");
-                        $("#results").append(`<div class="col-lg-12"><h3>上传时间` + data.createTime + `</h3></div>`);
-                        $.each(data.details, function (index, value) {
-                            $("#results").append(`<div class="col-lg-1">` + (index + 1) + `</div><div class="col-lg-5"><a href="` + value.webPath + `" target="_blank">` + value.webPath + `</a><div>`);
+                        $.each(data, function (idx, item) {
+                            $("#results").append(`<div class="col-lg-12"><h3>上传时间` + item.createTime.replace("T", " ") + `</h3></div>`);
+                            $.each(item.details, function (index, value) {
+                                $("#results").append(`<div class="col-lg-1 col-md-1">` + (index + 1) + `</div><div class="col-lg-11 col-md-11"><a href="` + value.webPath + `" target="_blank">` + value.webPath + `</a><div>`);
+                            });
                         });
                     }
                 },
-                error: function (obj) {
-                    console.log(obj);
-                    if (obj.status == 401)
+                error: function (error) {
+                    console.log(error);
+                    if (error.status == 401)
                         window.location.href = "./login.html";
                 }
             });

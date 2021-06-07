@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if DEBUG
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -23,8 +24,8 @@ using WebApiDocumentUploader.Services;
 namespace WebApiDocumentUploader.Controllers.v1
 {
     [ApiController]
-    [Authorize]
-    public class UploadStreamController : BaseController
+    //[Authorize]
+    public class TestController : BaseController
     {
         private readonly ILogger<UploadStreamController> _logger;
         private readonly UploadStreamService _uploadStreamService;
@@ -33,7 +34,7 @@ namespace WebApiDocumentUploader.Controllers.v1
 
         const int BUF_SIZE = 4096;
 
-        public UploadStreamController(ILogger<UploadStreamController> logger, 
+        public TestController(ILogger<UploadStreamController> logger, 
             UploadStreamService uploadStreamService,
             IWebHostEnvironment environment,
             IUploadService uploadService)
@@ -75,6 +76,122 @@ namespace WebApiDocumentUploader.Controllers.v1
                     x.Length
                 })
             });
+        }
+
+        [HttpGet("Unzip")]
+        public IActionResult Unzip()
+        {
+            // "C:\Program Files\7-Zip\7z" x 中文.zip -oC:\Users\zephyr\Desktop\test\testnew\
+            string filePath = @"C:\Users\zephyr\Desktop\test\中文.zip";
+            string username = "用户姓名";
+            string extractPath = Path.Combine(@"C:\Users\zephyr\Desktop\test", username);
+            StreamModel model = new StreamModel() { ImagePaths = new List<string>() };
+            List<UploadDetail> uploadDetails = new List<UploadDetail>();
+            using (var zip = ZipFile.Open(filePath, ZipArchiveMode.Update, Encoding.GetEncoding("utf-8")))
+            {
+                Uri baseUri = new Uri($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}");
+                foreach (var entry in zip.Entries)
+                {
+                    var detail = new UploadDetail
+                    {
+                        RecordId = 1,
+                        FileName = entry.Name,
+                        Path = Path.Combine(@"C:\Users\zephyr\Desktop\test", username, entry.FullName)
+                    };
+                    Uri myUri = new Uri(baseUri, detail.Path);
+                    model.ImagePaths.Add(myUri.ToString());
+                    uploadDetails.Add(detail);
+                    //string destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
+
+                    //// Ordinal match is safest, case-sensitive volumes can be mounted within volumes that
+                    //// are case-insensitive.
+                    //if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
+                    //    entry.ExtractToFile(destinationPath, true);
+                }
+            }
+            Encoding _encoding = Encoding.GetEncoding("utf-8");
+            ZipFile.ExtractToDirectory(filePath, extractPath, _encoding, true);
+            return Ok(new { uploadDetails = uploadDetails, model = model });
+        }
+
+        [HttpGet("Unzip2")]
+        public IActionResult Unzip2()
+        {
+            // "C:\Program Files\7-Zip\7z" x 中文.zip -oC:\Users\zephyr\Desktop\test\testnew\
+            string filePath = @"C:\Users\zephyr\Desktop\test\中文.zip";
+            string username = "用户姓名";
+            string extractPath = Path.Combine(@"C:\Users\zephyr\Desktop\test", username);
+            if (!Directory.Exists(extractPath))
+                Directory.CreateDirectory(extractPath);
+            StreamModel model = new StreamModel() { ImagePaths = new List<string>() };
+            List<UploadDetail> uploadDetails = new List<UploadDetail>();
+            using (ArchiveFile archiveFile = new ArchiveFile(filePath))
+            {
+                foreach (Entry entry in archiveFile.Entries)
+                {
+                    Console.WriteLine(entry.FileName);
+                    uploadDetails.Add(new UploadDetail { SavePath= entry.IsFolder.ToString(),  FileName = entry.FileName, Path = entry.Size.ToString() });
+                    //// extract to file
+                    //entry.Extract(entry.FileName);
+
+                    //// extract to stream
+                    //MemoryStream memoryStream = new MemoryStream();
+                    //entry.Extract(memoryStream);
+                    string name = Path.GetFileName(entry.FileName);
+                    string fileName = Path.Combine(extractPath, name);
+                    using (FileStream fileStream = System.IO.File.Create(fileName))
+                    {
+                        entry.Extract(fileStream);
+                    }
+
+                }
+            }
+            //using (ArchiveFile archiveFile = new ArchiveFile(filePath))
+            //{
+            //    // extract all
+            //    archiveFile.Extract(extractPath, true);
+            //}
+            return Ok(new { uploadDetails = uploadDetails, model = model });
+        }
+
+        [HttpGet("Unzip3")]
+        public IActionResult Unzip3()
+        {
+            // "C:\Program Files\7-Zip\7z" x 中文.zip -oC:\Users\zephyr\Desktop\test\testnew\
+            string filePath = @"C:\Users\zephyr\Desktop\test\中文.zip";
+            string username = "用户姓名";
+            string extractPath = Path.Combine(@"C:\Users\zephyr\Desktop\test", username);
+            if (!Directory.Exists(extractPath))
+                Directory.CreateDirectory(extractPath);
+            StreamModel model = new StreamModel() { ImagePaths = new List<string>() };
+            List<UploadDetail> uploadDetails = new List<UploadDetail>();
+            using (var zip = ZipFile.Open(filePath, ZipArchiveMode.Update, Encoding.GetEncoding("utf-8")))
+            {
+                Uri baseUri = new Uri($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}");
+                foreach (var entry in zip.Entries)
+                {
+                    byte[] nmbyte = Encoding.GetEncoding("CP437").GetBytes(entry.Name);
+                    string str = System.Text.Encoding.Default.GetString(nmbyte);
+                    var detail = new UploadDetail
+                    {
+                        RecordId = 1,
+                        FileName = str,
+                        Path = Path.Combine(@"C:\Users\zephyr\Desktop\test", username, entry.FullName)
+                    };
+                    Uri myUri = new Uri(baseUri, detail.Path);
+                    model.ImagePaths.Add(myUri.ToString());
+                    uploadDetails.Add(detail);
+                    //string destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
+
+                    //// Ordinal match is safest, case-sensitive volumes can be mounted within volumes that
+                    //// are case-insensitive.
+                    //if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
+                    //    entry.ExtractToFile(destinationPath, true);
+                }
+            }
+            //Encoding _encoding = Encoding.GetEncoding(850);
+            //ZipFile.ExtractToDirectory(filePath, extractPath, _encoding, true);
+            return Ok(new { uploadDetails = uploadDetails, model = model });
         }
 
         [HttpPost("uploadzip")]
@@ -138,33 +255,31 @@ namespace WebApiDocumentUploader.Controllers.v1
 
                 model.ImagePaths = new List<string>();
                 List<UploadDetail> uploadDetails = new List<UploadDetail>();
-                using (ArchiveFile archiveFile = new ArchiveFile(filePath))
+                using (var zip = ZipFile.Open(filePath, ZipArchiveMode.Update, Encoding.GetEncoding("utf-8")))
                 {
                     Uri baseUri = new Uri($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}");
-                    foreach (var entry in archiveFile.Entries)
+                    foreach (var entry in zip.Entries)
                     {
-                        // 不创建文件夹
-                        if (entry.IsFolder)
-                            continue;
-                        // 只保留文件名，不保留文件夹
-                        string name = Path.GetFileName(entry.FileName);
-                        string extractFileName = Path.Combine(extractPath, name);
                         var detail = new UploadDetail
                         {
                             RecordId = uploadRecord.Id,
-                            FileName = name,
-                            Path = Path.Combine("images", username, name),
-                            SavePath = extractFileName
+                            FileName = entry.Name,
+                            Path = Path.Combine("images", username, entry.FullName),
+                            SavePath = Path.Combine(extractPath, entry.FullName)
                         };
                         Uri myUri = new Uri(baseUri, detail.Path);
                         model.ImagePaths.Add(myUri.ToString());
                         uploadDetails.Add(detail);
-                        using (FileStream fileStream = System.IO.File.Create(extractFileName))
-                        {
-                            entry.Extract(fileStream);
-                        }
+                        //string destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
+
+                        //// Ordinal match is safest, case-sensitive volumes can be mounted within volumes that
+                        //// are case-insensitive.
+                        //if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
+                        //    entry.ExtractToFile(destinationPath, true);
                     }
                 }
+                Encoding _encoding = Encoding.GetEncoding("utf-8");
+                ZipFile.ExtractToDirectory(filePath, extractPath, _encoding, true);
                 await _uploadService.UploadDetailAsync(uploadDetails);
             }
 
@@ -195,23 +310,6 @@ namespace WebApiDocumentUploader.Controllers.v1
             if (record == null)
                 return Ok();
             record.Details.ForEach(o => o.BaseUri = new Uri($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}"));
-            return Ok(record);
-        }
-        /// <summary>
-        /// 上传记录
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost("history")]
-        public IActionResult GetUploadHistory()
-        {
-            string username = Response.HttpContext.User.Identity.Name;
-            var record = _uploadService.GetUploadHistory(username);
-            if (record == null)
-                return Ok();
-            record.ForEach(i => 
-                i.Details.ForEach(o => 
-                    o.BaseUri = new Uri($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}"))
-            );
             return Ok(record);
         }
 
@@ -275,19 +373,5 @@ namespace WebApiDocumentUploader.Controllers.v1
         }
         
     }
-    
-    //DEBUG ONLY
-    public class UploadModel {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public List<IFormFile> Files { get; set; }
-    }
-
-    //DEBUG ONLY
-    class StreamModel {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string filepath { get; set; }
-        public List<string> ImagePaths { get; set; }
-    }
 }
+#endif
