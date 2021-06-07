@@ -87,6 +87,9 @@
                     console.log(error);
                     if (error.status == 401)
                         window.location.href = "./login.html";
+                    if (error.responseJSON || error.responseText)
+                        alert(error.responseJSON || error.responseText);
+                    $("#results").html("");
                 },
                 async: true,
                 data: formData,

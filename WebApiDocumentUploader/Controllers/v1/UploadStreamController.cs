@@ -128,16 +128,18 @@ namespace WebApiDocumentUploader.Controllers.v1
             string rootpath = Path.Combine("uploads", username, fileName);
             var uploadRecord =  _uploadService.UploadRecord(username, fileName, rootpath, filePath);
 
-            if (System.IO.Path.GetExtension(filePath) == ".zip")
+            #region 解压
+
+            // 文件目录
+            string extractPath = Path.Combine(_hostingEnvironment.WebRootPath ?? _hostingEnvironment.ContentRootPath, "images", username);
+
+            if (!Directory.Exists(extractPath))
+                Directory.CreateDirectory(extractPath);
+
+            model.ImagePaths = new List<string>();
+            List<UploadDetail> uploadDetails = new List<UploadDetail>();
+            try
             {
-                // 文件目录
-                string extractPath = Path.Combine(_hostingEnvironment.WebRootPath ?? _hostingEnvironment.ContentRootPath, "images", username);
-
-                if (!Directory.Exists(extractPath))
-                    Directory.CreateDirectory(extractPath);
-
-                model.ImagePaths = new List<string>();
-                List<UploadDetail> uploadDetails = new List<UploadDetail>();
                 using (ArchiveFile archiveFile = new ArchiveFile(filePath))
                 {
                     Uri baseUri = new Uri($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}");
@@ -167,6 +169,15 @@ namespace WebApiDocumentUploader.Controllers.v1
                 }
                 await _uploadService.UploadDetailAsync(uploadDetails);
             }
+            catch (SevenZipException ex) 
+            {
+                if (ex.Message?.EndsWith("is not a known archive type") == true)
+                {
+                    return BadRequest("上传的不是压缩文件");
+                }
+            }
+
+            #endregion
 
             model.filepath = rootpath;
 
